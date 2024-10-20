@@ -1,0 +1,2 @@
+1. The shop's data are loaded from csv file using pandas library.
+2. 
