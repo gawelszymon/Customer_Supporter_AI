@@ -11,7 +11,7 @@ import pandas as pd
 #         print("_____________________________________________________")
 
 
-tariff_file = 'cennik.csv'
+tariff_file = '../cennik.csv'
 df = pd.read_csv(tariff_file, delimiter=';')
 
 print(df.head(10))
