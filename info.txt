@@ -1,2 +1,17 @@
-1. The shop's data are loaded from csv file using pandas library.
-2. 
+1. RAG, czyli nieocenione wsparcie LLM przez db.
+Łączy generowanie tekstu za pomocą LLM (np. GPT) z wyszukiwaniem informacji w bazie danych,
+od modelu językowego odróżnia ją to, że LLM opiera się tylko i wyłącznie na swoim wyuczonym
+kontekście, natomiast RAG integruje odpowiedź LLM z analizą danych zawartych w db.
+Zdolności modelu językowego są wzbogacone o db.
+
+2. RAG działanie:
+    a. Wyszukiwanie
+       Na początku model RAG przeszukuje db, aby znależć treści, o które pyta się użytkownik.
+    b. Generowanie
+       Po znalezienu odpowiednich informacji, model generuje odpowiedź, korzystając z odnalezionych danych,
+       jak i swoich LLM-owych zdolności.
+    c. Ogólnie
+       Dzięki temu mechanizmowi odpowiedzi są znacznie bardziej trafne i szczegółowe oraz zapewnia wsparcie przy 
+       odpowiednio dużej db, tak dużej, której precyzyjne nauczenie się mogłoby stanowić problem dla modelu językowego.
+
+3. Dokumentacja do narzędzi RAG w python: https://huggingface.co/docs/transformers/model_doc/rag

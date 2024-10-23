@@ -1,17 +1,13 @@
-import csv
-
+from transformers import RagTokenizer, RagRetriever, RagTokenForGeneration
 import pandas as pd
 
-# with open('cennik.csv', newline='') as tariff:
-#     tariffreader =  csv.reader(tariff, delimiter=';')
-#     rows = list(tariffreader)
-    
-#     for i in range(2):
-#         print(' | \n'.join(rows[i]))
-#         print("_____________________________________________________")
+tokenizer = RagTokenizer.from_pretrained("facebook/rag-token-nq")
+model = RagTokenForGeneration.from_pretrained("facebook/rag-token-nq")
 
-
-tariff_file = '../cennik.csv'
+tariff_file = 'cennik.csv'
 df = pd.read_csv(tariff_file, delimiter=';')
+
+passages = df['NA_PROMOCJI'].tolist()
+retriever = RagRetriever.from_pretrained("facebook/rag-token-nq", index_name="custom", passages=passages)
 
 print(df.head(10))
