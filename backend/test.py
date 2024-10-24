@@ -2,7 +2,7 @@ import csv
 
 import pandas as pd
 
-tariff_file = 'cennik.csv'
+tariff_file = 'backend/cennik.csv'
 df = pd.read_csv(tariff_file, delimiter=';', encoding='utf-8', on_bad_lines='skip')
 
-print(df.head(10))
+print(df['CENA_KLIENT'].head(20))
