@@ -1,8 +1,14 @@
-import csv
+# from sentence_transformers import SentenceTransformer
 
-import pandas as pd
+# sentences = ["this is an this sentence", "Each this is converted"]
 
-tariff_file = 'backend/cennik.csv'
-df = pd.read_csv(tariff_file, delimiter=';', encoding='utf-8', on_bad_lines='skip')
+# model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+# embeddings = model.encode(sentences)
+# print(embeddings)
 
-print(df['CENA_KLIENT'].head(20))
+
+try:
+    from llama_index import Document
+    print("Moduł jest dostępny.")
+except ModuleNotFoundError:
+    print("Moduł nie jest zainstalowany.")
