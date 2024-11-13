@@ -1,1 +1,5 @@
 cennik.csv
+openai_api_key.txt
+index_storage
+model_cache
+model_offload
