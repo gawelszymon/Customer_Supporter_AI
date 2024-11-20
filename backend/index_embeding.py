@@ -17,5 +17,3 @@ nodes = nodes_parser.get_nodes_from_documents(docs, show_progress=True)
 index = VectorStoreIndex(nodes, embed_model=embed_model)
 index_dir = "./index_storage"
 index.storage_context.persist(index_dir)
-
-# ve
