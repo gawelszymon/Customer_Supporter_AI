@@ -17,3 +17,5 @@ Zdolności modelu językowego są wzbogacone o db.
 3. Dokumentacja do narzędzi RAG w python: https://huggingface.co/docs/transformers/model_doc/rag
 
 4. RAG - Retrieval Argumented Generation
+
+5. Embedd model is a tool that convert datas like text or images into a vector representation

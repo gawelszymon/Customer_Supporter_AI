@@ -4,11 +4,10 @@ import sys
 import logging
 import os
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core.llms import LLM, CompletionResponse, ChatResponse
-from llama_index.core.prompts.prompts import SimpleInputPrompt
 import torch
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 from pydantic import Field, PrivateAttr
 from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -21,7 +20,7 @@ class CustomHuggingFaceLLM(LLM):
     device_map: str = Field(default="auto", description="Device map for model loading")
     cache_dir: str = Field(default="./model_cache", description="Directory to store model weights")
     offload_dir: str = Field(default="./model_offload", description="Directory for weight offloading")
-    context_window: int = Field(default=2048, description="Maximum context window size")
+    # context_window: int = Field(default=2048, description="Maximum context window size")
     max_new_tokens: int = Field(default=256, description="Maximum number of new tokens to generate")
     
     _tokenizer: Any = PrivateAttr()
@@ -83,7 +82,7 @@ class CustomHuggingFaceLLM(LLM):
         return {
             "model_name": self.model_name,
             "device": self._device.type,
-            "context_window": self.context_window,
+            # "context_window": self.context_window,
             "max_new_tokens": self.max_new_tokens
         }
 
@@ -92,6 +91,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 docs_path = "./exemplary_base"
+storage = "./index_storage"
 
 embed_model = HuggingFaceEmbedding(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -104,38 +104,30 @@ system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM will refuse to participate in anything that could harm a human.
 """
 
-# Initialize the custom LLM
 llm = CustomHuggingFaceLLM(
     model_name="StabilityAI/stablelm-tuned-alpha-3b",
     tokenizer_name="StabilityAI/stablelm-tuned-alpha-3b",
     device_map="auto",
     cache_dir="./model_cache",
     offload_dir="./model_offload",
-    context_windwow=2048,
+    # context_window=2048,
     max_new_tokens=256
 )
 
-# Create service context
 Settings.llm = llm
 Settings.embed_model = embed_model
 Settings.chunk_size = 1024
 Settings.chunk_overlap = 20
 # Settings.context_window = 4096
 
-def initialize_index():
-    if not os.path.exists(docs_path):
-        os.makedirs(docs_path)
-        print(f"Created directory: {docs_path}")
-        return None
+def initialize_index(): 
     
-    documents = SimpleDirectoryReader(docs_path).load_data()
-    if not documents:
-        print("No documents found in the specified directory.")
-        return None
+    reader = SimpleDirectoryReader(docs_path, recursive=True, exclude_hidden=True)
+    reader.input_files()
+    storage.reader.load_data()
         
-    return VectorStoreIndex.from_documents(documents, embed_model=embed_model)
+    return VectorStoreIndex.from_documents(reader, embed_model=embed_model)
 
-# Initialize the index
 index = initialize_index()
 
 def chatbot(input_text):
@@ -155,7 +147,6 @@ def chatbot(input_text):
     
     return response.response, relevant_files
 
-# Create the Gradio interface
 iface = gr.Interface(
     fn=chatbot,
     inputs=gr.components.Textbox(lines=7, label="Enter your text"),
@@ -163,7 +154,7 @@ iface = gr.Interface(
         gr.components.Textbox(label="Response"),
         gr.components.File(label="Relevant Files")
     ],
-    title="Custom-trained AI Chatbot",
+    title="Customer Supporter AI Chatbot",
     allow_flagging="never"
 )
 
