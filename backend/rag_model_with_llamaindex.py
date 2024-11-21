@@ -33,9 +33,9 @@ Settings.chunk_size = 512
 Settings.chunk_overlap = 25
 index = VectorStoreIndex.from_documents(documents, embed_model=embed_model, show_progress=True)
 
-retriever = VectorIndexRetriever(index=index, simlarity_top_k=3)
+retriever = VectorIndexRetriever(index=index, simlarity_top_k=2)
 
-prompt_text = "Compare Cegła Pełna and Cement?"
+prompt_text = "Płyta OSB 12mm?"
 fragments = retriever.retrieve(prompt_text)
 
 print(f'number of text fragments: {len(fragments)}')
@@ -69,7 +69,7 @@ response_iter = llm.stream_complete("Jaka jest Cena Płyta OSB 12mm z kategorii 
 for response in response_iter:
     print(response.delta, end="", flush=True)
     
-query_engine = index.as_query_engine(similarity_top_k=6, llm=llm)
+query_engine = index.as_query_engine(similarity_top_k=2, llm=llm)
 
 prompts = query_engine.get_prompts()
 print(prompts['response_synthesizer:text_qa_template'].get_template())
