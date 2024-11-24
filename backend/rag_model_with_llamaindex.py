@@ -19,16 +19,16 @@ def get_meta(file_path):
 loader = SimpleDirectoryReader(base, required_exts=['.csv', '.txt'], file_metadata=get_meta, recursive=True)
 documents = loader.load_data()
 
-print(f'type:\t {type(documents)}')
-print(f'len:\t  {len(documents)}')
-print(f'doc[0]:\t {type(documents[0])}')
+# print(f'type:\t {type(documents)}')
+# print(f'len:\t  {len(documents)}')
+# print(f'doc[0]:\t {type(documents[0])}')
 
 
 model_name_for_embeddings = "BAAI/bge-small-en-v1.5"
 embed_model = HuggingFaceEmbedding(model_name=model_name_for_embeddings)
 embedding = embed_model.get_query_embedding("any text")
-print(f'embedding (vector): {embedding}')
-print(f'len(vector): {len(embedding)}')
+# print(f'embedding (vector): {embedding}')
+# print(f'len(vector): {len(embedding)}')
 Settings.chunk_size = 512
 Settings.chunk_overlap = 25
 index = VectorStoreIndex.from_documents(documents, embed_model=embed_model, show_progress=True)
@@ -38,8 +38,8 @@ retriever = VectorIndexRetriever(index=index, simlarity_top_k=2)
 prompt_text = "Płyta OSB 12mm?"
 fragments = retriever.retrieve(prompt_text)
 
-print(f'number of text fragments: {len(fragments)}')
-print('='*80)
+# print(f'number of text fragments: {len(fragments)}')
+# print('='*80)
 
 for fragment in fragments:
     print(f'metadata: {fragment.metadata}')
@@ -64,10 +64,10 @@ Settings.llm = llm
 Settings.embed_model = embed_model
 Settings.chunk_size = 512
 
-response_iter = llm.stream_complete("Jaka jest Cena Płyta OSB 12mm z kategorii Materiały Budowlane")
+# response_iter = llm.stream_complete("Jaka jest Cena Płyta OSB 12mm z kategorii Materiały Budowlane")
 
-for response in response_iter:
-    print(response.delta, end="", flush=True)
+# for response in response_iter:
+#     print(response.delta, end="", flush=True)
     
 query_engine = index.as_query_engine(similarity_top_k=2, llm=llm)
 
