@@ -1,48 +1,66 @@
-from llama_index.core import StorageContext, load_index_from_storage
-from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.core.vector_stores import SimpleVectorStore
-from llama_index.core.storage.index_store import SimpleIndexStore
-
-import os
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, get_response_synthesizer
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.llms.groq import Groq
+from getpass import getpass
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.core import Settings
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.postprocessor import SimilarityPostprocessor
+from os import sep
+from llama_index.readers.file import PandasCSVReader
+from llama_index.core import Document
+import pandas as pd
+from llama_index.core.schema import TextNode
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from getpass import getpass
+import gradio as gr
 
-# index_storage = "index_storage"
+GROQ_API_KEY = getpass()
 
+llm = Groq(model="llama3-8b-8192", api_key=GROQ_API_KEY)
 
-storage_context = StorageContext.from_defaults(
-    docstore=SimpleDocumentStore.from_persist_dir(persist_dir="./storage"),
-    vector_store=SimpleVectorStore.from_persist_dir(
-        persist_dir="./storage"
-    ),
-    index_store=SimpleIndexStore.from_persist_dir(persist_dir="./storage"),
-)
+data = pd.read_csv("./cennik.csv", delimiter=";", on_bad_lines="warn")
 
-index = load_index_from_storage(storage_context)
+documents = []
+nodes = []
+for _, row in data.iterrows():
+    metadata = {
+        "NAZWA": row["NAZWA"],
+        "KATEGORIE": row["KATEGORIE"],
+        "PRODUCENT": row["PRODUCENT"],
+        "CENA_KATALOGOWA": row["CENA_KATALOGOWA"],
+        "CENA_KLIENT": row["CENA_KLIENT"],
+        "WALUTA": row["WALUTA"],
+        "VAT": row["VAT"],
+        "RABAT_KLIENTA": row["RABAT_KLIENTA"],
+        "WAGA": row["WAGA"],
+        "OPAKOWANIE": row["OPAKOWANIE"],
+        "JEDNOSTKA_MIARY": row["JEDNOSTKA_MIARY"],
+        "TYP_KURIERA": row["TYP_KURIERA"],
+        "KURIERZY_NAZWA": row["KURIERZY_NAZWA"],
+        "ACTIVE": row["ACTIVE"],
+    }
 
-# retriever = VectorIndexRetriever(index=index, simlarity_top_k=2)
+    # Treść węzła: nazwa i opis produktu
+    content = f"{row['NAZWA']}, czyli {row['OPIS']}"
+    nodes.append(TextNode(text=content, metadata=metadata))
+    
+embed_model = HuggingFaceEmbedding( model_name="BAAI/bge-small-en-v1.5")
+index=VectorStoreIndex(nodes, embed_model=embed_model)
+Settings.embed_model = embed_model
 
-# model_name_for_generation = 'https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf'
-# llm = LlamaCPP(model_url=model_name_for_generation,
-#             temperature=0.7,
-#             max_new_tokens=256,
-#             context_window=4096, # 4096 is max for Llama2
-#             generate_kwargs = {"stop": ["<s>", "[INST]", "[/INST]"]},# kwargs for Llama: stop==A list of strings to stop generation when encountered.
-#             # other kwargs for generation: top_k, top_p, min_p, frequentcy_penalty, repeat_penalty,
-#             model_kwargs={"n_gpu_layers": 43},  # for GPU acceleration (nuber of layers for GPU offloading)
-#             # other kwargs for model: lora_path, lora_base
-#             verbose=True)
-# Settings.llm = llm
-# Settings.embed_model = embed_model
-# Settings.chunk_size = 512
+# query_engine=index.as_query_engine(llm=llm)
 
-# query_engine = index.as_query_engine(similarity_top_k=2, llm=llm)
-# response = query_engine.query("Jaka jest Cena Imadła Warsztatowego marki Topex?")
-# print('='*80)
+# response = query_engine.query("Jaki jest najtańszy produkt? Jaką ma nazwę i ile kosztuje?")
 # print(response)
+
+def chatbot(input_text):
+    query_engine = index.as_query_engine(llm=llm)
+    response = query_engine.query(input_text)
+
+    return response
+
+iface = gr.Interface(fn=chatbot, 
+                    inputs=gr.components.Textbox(lines=7, label="Enter your text"),
+                    outputs=gr.components.Textbox(label="Response"),
+                    title="Customer Support AI",
+                    allow_flagging="never")
+
+iface.launch(share=True, debug=True)
