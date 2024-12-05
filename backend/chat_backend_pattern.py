@@ -8,6 +8,7 @@ from llama_index.core import Settings, VectorStoreIndex
 from llama_index.llms.groq import Groq
 from llama_index.core import StorageContext
 from llama_index.core import load_index_from_storage
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
@@ -19,6 +20,30 @@ llm = Groq(model="llama3-8b-8192", api_key=api_key)
 def create_llama_index():
     try:
         index_dir = './index'  # Specify the directory your index will be stored
+        
+        # data = pd.read_csv("./cennik.csv", delimiter=";", on_bad_lines="warn")
+        
+        # nodes = []
+        # for _, row in data.iterrows():
+        #     metadata = {
+        #         "NAZWA": row["NAZWA"],
+        #         "KATEGORIE": row["KATEGORIE"],
+        #         "PRODUCENT": row["PRODUCENT"],
+        #         "CENA_KLIENT": row["CENA_KLIENT"],
+        #         "WALUTA": row["WALUTA"],
+        #         "VAT": row["VAT"],
+        #         "RABAT_KLIENTA": row["RABAT_KLIENTA"],
+        #         "WAGA": row["WAGA"],
+        #         "OPAKOWANIE": row["OPAKOWANIE"],
+        #         "JEDNOSTKA_MIARY": row["JEDNOSTKA_MIARY"],
+        #         "TYP_KURIERA": row["TYP_KURIERA"],
+        #         "KURIERZY_NAZWA": row["KURIERZY_NAZWA"],
+        #         "ACTIVE": row["ACTIVE"],
+        #     }
+
+        #     # Treść węzła: nazwa, opis, producent, kategoria i cena
+        #     content = f"{row['NAZWA']}\n\n{row['OPIS']}\n\n{row['PRODUCENT']}\n\n{row['KATEGORIE']}\n\n{row['CENA_KLIENT']}"
+        #     nodes.append(TextNode(text=content, metadata=metadata))
         
         nodes = [
             TextNode(
@@ -164,66 +189,72 @@ def create_llama_index():
         
         index.storage_context.persist(persist_dir=index_dir)
 
-        return jsonify({'result': 'File indexed successfully'})
+        return print({'result': 'File indexed successfully'})
     except Exception as e:
-        return jsonify({'error':  f"An error occurred: {e}"})
+        return print({'error':  f"An error occurred: {e}"})
+    
+#create_llama_index()
 
-#this creates a custom prompt to be used in quering the index
-
-
-def get_custom_prompt():
-    try:
-        from llama_index.prompts import Prompt
-        return Prompt("""\
-Rephrase the conversation and subsequent message into 
-a self-contained question while including all relevant details. 
-Conclude the question with: Only refer to this document.
-
-<Chat History> 
-{chat_history}
-
-<Follow Up Message>
-{question}
-
-<Standalone question>
-""")
-    except Exception as e:
-        # If an error occurs during the try block, catch it here
-        return jsonify({'error':  f"An error occurred: {e}"})
-
-# creates chat history
+# this creates a custom prompt to be used in quering the index
 
 
-def getChatHistory(history='[]'):
-    try:
-        from llama_index.llms import ChatMessage, MessageRole
-        history = json.loads(history)
+# def get_custom_prompt():
+#     try:
+#         from llama_index.prompts import Prompt
+#         return Prompt("""\
+# Rephrase the conversation and subsequent message into 
+# a self-contained question while including all relevant details. 
+# Conclude the question with: Only refer to this document.
 
-        # initialize chart history
-        custom_chat_history = []
-        roles = {"left_bubble": "ASSISTANT", "right_bubble": "USER"}
-        for chat in history:
-            position = chat['position']
-            role = MessageRole[roles[position]]
-            content = chat['message']
-            custom_chat_history.append(
-                ChatMessage(
-                    # can be USER or ASSISTANT
-                    role=role,
-                    content=content
-                )
-            )
-        return custom_chat_history
-    except Exception as e:
-        # If an error occurs during the try block, catch it here
-        return jsonify({'error':  f"An error occurred: {e}"})
+# <Chat History> 
+# {chat_history}
+
+# <Follow Up Message>
+# {question}
+
+# <Standalone question>
+# """)
+#     except Exception as e:
+#         # If an error occurs during the try block, catch it here
+#         return jsonify({'error':  f"An error occurred: {e}"})
+
+# # creates chat history
+
+
+# def getChatHistory(history='[]'):
+#     try:
+#         from llama_index.llms import ChatMessage, MessageRole
+#         history = json.loads(history)
+
+#         # initialize chart history
+#         custom_chat_history = []
+#         roles = {"left_bubble": "ASSISTANT", "right_bubble": "USER"}
+#         for chat in history:
+#             position = chat['position']
+#             role = MessageRole[roles[position]]
+#             content = chat['message']
+#             custom_chat_history.append(
+#                 ChatMessage(
+#                     # can be USER or ASSISTANT
+#                     role=role,
+#                     content=content
+#                 )
+#             )
+#         return custom_chat_history
+#     except Exception as e:
+#         # If an error occurs during the try block, catch it here
+#         return jsonify({'error':  f"An error occurred: {e}"})
 
 
 def query_index():
     try:
         
         index_dir = 'index'
-
+        
+        Settings.embed_model = HuggingFaceEmbedding(
+            model_name="BAAI/bge-small-en-v1.5"
+        )
+        
         data = request.get_json()
         prompt = data.get('prompt')
         #prompt = "Jaka jest cena Wałka Malarskiego?"
@@ -232,7 +263,7 @@ def query_index():
         
         storage_context = StorageContext.from_defaults(persist_dir=index_dir)
         index = load_index_from_storage(storage_context)
-        query_engine = index.as_query_engine(llm=llm)
+        #query_engine = index.as_query_engine(llm=llm)
         
         chat_engine = index.as_chat_engine(chat_mode="condense_question", llm=llm, verbose=True)
 
@@ -244,8 +275,8 @@ def query_index():
 
 
 @app.route('/')
-def hello_world():
-    return jsonify({'result':  "Hello world"})
+def init_endpoint():
+    return jsonify({'result':  "Flask app is working"})
 
 
 @app.route('/ask_ai', methods=['POST'])
@@ -274,4 +305,4 @@ def query_endpoint():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', debug=True)
